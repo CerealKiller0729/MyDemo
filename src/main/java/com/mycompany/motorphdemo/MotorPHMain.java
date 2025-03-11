@@ -45,7 +45,7 @@ public class MotorPHMain {
         switch (ch){
             case "1":
                 System.out.print("""
-                ----- Motor PH MENU -----
+                ----- DASHBOARD-----
 
                 1: Individual Employee Details
                 2: All Employee Details
