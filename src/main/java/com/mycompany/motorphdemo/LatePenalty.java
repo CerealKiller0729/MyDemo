@@ -16,6 +16,7 @@ public class LatePenalty extends Calculation{
     @Override
     public double calculate(){
     double totalLateDeduction = 0;
+    boolean foundLateRecord = false; // Flag to check if any late records were found
     
     // Iterates through every attendance record.
     for (AttendanceRecord attendanceRecord : AttendanceRecord.attendanceRecords) {
@@ -46,16 +47,21 @@ public class LatePenalty extends Calculation{
 
                     // Ensure deduction is non-negative
                     totalLateDeduction += Math.max(0, deduction);
+                    // Set the flag to true since we found a late record
+                        foundLateRecord = true;
 
                 }
 
-                System.out.println("Late ID" + Grosswage.getTargetEmployeeID());
-                System.out.println("month" + Grosswage.getTargetMonth());
-                // You can add more logic here if needed, such as printing details for each record
+               // System.out.println("Late ID" + Grosswage.getTargetEmployeeID());
+                //System.out.println("month" + Grosswage.getTargetMonth());
             }
         }
     }
-
+          // Print the target employee ID and month only if a late record was found
+        if (foundLateRecord) {
+            System.out.println("Late ID: " + Grosswage.getTargetEmployeeID());
+            System.out.println("Month: " + Grosswage.getTargetMonth());
+        }
     return totalLateDeduction;
     }
 }
