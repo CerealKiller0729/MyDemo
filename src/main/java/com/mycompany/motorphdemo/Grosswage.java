@@ -35,6 +35,10 @@ public class Grosswage extends Calculation{
                 System.out.println("Enter Month: ");
                 targetMonth = sc.nextInt();
                 System.out.println("-------------------------");
+                
+                // Debugging print statements
+    System.out.println("Target Employee ID: " + getTargetEmployeeID());
+    System.out.println("Target Month: " + getTargetMonth());
 
             // Read all rows from the txt file
             // Find the hourly rate for the chosen employee ID
@@ -50,13 +54,22 @@ public class Grosswage extends Calculation{
                     // Check if the hourly rate string is a valid decimal number
                     if (isValidDecimal(Double.toString(getHourly()))) {
                         double HourlyRate = employee.getHourlyRate();
-                        long hour = AttendanceRecord.calculateTotalHoursAndPrint(2022, getTargetMonth(), getTargetEmployeeID());
-                        double hoursCalculated = HourlyRate * hour;
+                        long totalHours = 0;
+                         List<Integer> years = List.of(2022, 2023, 2024); 
+                         // Loop through the years to calculate total hours
+                for (int year : years) {
+                    totalHours += AttendanceRecord.calculateTotalHoursAndPrint(year, getTargetMonth(), getTargetEmployeeID());
+                }
+                        // Debugging print statement for calculated hours
+                System.out.println("Total Calculated Hours: " + totalHours);
+                        double hoursCalculated = HourlyRate * totalHours;
                         
                         setHourly(HourlyRate);
-                        hours = hour;
+                        hours = totalHours;
                         gross = hoursCalculated;
-                        employeeName = employee.getFirstName() + employee.getLastName();
+                        employeeName = employee.getFirstName() + " "+ employee.getLastName();
+                        // Call printGross to display the results
+                printGross();
                         //printGross(employee.getEmployeeNumber(), employeeName, HourlyRate, hour, gross);
                     } else {
                         System.out.println("Invalid hourly rate for Employee ID " + getEmployeeID() + ": " + getHourly());
