@@ -14,10 +14,14 @@ import java.util.Scanner;
 public class MotorPHMain {
    private static Scanner scanner = new Scanner(System.in);
     
-    static ArrayList<AttendanceRecord> attendanceRecords = AttendanceRecord.getAttendanceRecords();
+   
+    //static ArrayList<AttendanceRecord> attendanceRecords = AttendanceRecord.getAttendanceRecords();
     
     public static void main(String[] args) {
         System.out.println("Current Working Directory: " + System.getProperty("user.dir"));
+        
+         // Load attendance records before entering the menu
+        AttendanceRecord.loadAttendance(); 
         menu();
     }
     
