@@ -3,165 +3,133 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.mycompany.motorphdemo;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.text.DecimalFormat; // Make sure to import DecimalFormat
+import java.util.List;
+import java.util.Scanner;
 
 /**
  *
  * @author angeliquerivera
  */
-public class AttendanceRecord {
-     private String name;
-    private String id;
-    private LocalDate date;
-    private LocalTime timeIn;
-    private LocalTime timeOut;
-    private static String TXT_FILE_PATH = "src/main/resources/AttendanceRecord5.txt";
-
-    public static ArrayList<AttendanceRecord> attendanceRecords;
-    // FORMATTER FOR TIME
-    private static final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-
-    // Constructor
-    public AttendanceRecord(String name, String id, LocalDate date, LocalTime timeIn, LocalTime timeOut) {
-        this.name = name;
-        this.id = id;
-        this.date = date;
-        this.timeIn = timeIn;
-        this.timeOut = timeOut;
+public class MotorPHMain {
+   private static Scanner scanner = new Scanner(System.in);
+    
+   
+    //static ArrayList<AttendanceRecord> attendanceRecords = AttendanceRecord.getAttendanceRecords();
+    
+    public static void main(String[] args) {
+        System.out.println("Current Working Directory: " + System.getProperty("user.dir"));
+        
+         // Load attendance records before entering the menu
+        AttendanceRecord.loadAttendance(); 
+        menu();
     }
     
-    public AttendanceRecord(){}
+    // Print main menu
+    private static void menu(){
+        int Resume = 1;  
+    do{ 
+        System.out.print("""
+        ----- Motor PH MENU -----
 
-    static {
-        attendanceRecords = loadAttendance();
-    }
-    
-    // LOADS ATTENDANCE FROM A TXT USING TRY-CATCH TO ENSURE PROPER LOADING AND CLOSING
-    public static ArrayList<AttendanceRecord> loadAttendance() {
-        ArrayList<AttendanceRecord> attendanceRecords = new ArrayList<>();
+        1: Show Employee Details
+        2: Calculate Gross Wage
+        3: Calculate Net Wage
+        0: EXIT
+        -------------------------
+        CHOOSE: """);
         
-        
-        try (BufferedReader br = new BufferedReader(new FileReader(TXT_FILE_PATH))) {
-            // FORMATS RECEIVED DATA TO FIT WHAT IS NEEDED
-            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy"); // FORMAT FOR DATE
-            DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm");      // FORMAT FOR TIME
+        String detailSub;
+        String ch = scanner.next();
+ 
+        switch (ch){
+            case "1":
+                System.out.print("""
+                ----- Motor PH MENU -----
 
-            // Read and skip the header
-            br.readLine();
-
-            // Process attendance records
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(",");
-
-                if (data.length >= 6) {
-                    String name = data[1] + " " + data[2].trim();
-                    String id = data[0];
-                    LocalDate date = LocalDate.parse(data[3], dateFormat);
-                    LocalTime timeIn = LocalTime.parse(data[4], timeFormat);
-                    LocalTime timeOut = LocalTime.parse(data[5], timeFormat);
-
-                    attendanceRecords.add(new AttendanceRecord(name, id, date, timeIn, timeOut));
-                } else {
-                    System.out.println("Invalid data: " + line);
-                }
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
+                1: Individual Employee Details
+                2: All Employee Details
+                -------------------------
+                Choose: """);
+                detailSub = scanner.next();
+                System.out.println("-------------------------");
+                menu(detailSub);
+                break;
+                
+            case "2":
+                Calculation grosswage = new Grosswage();              
+                grosswage.calculate();
+                Grosswage.printGross();               
+                break;
+                
+            case "3":
+                Calculation netwage = new Netwage();              
+                netwage.calculate();
+                break;               
+                
+            case "0":
+                System.exit(0);
+                break;
+            
+            default:
+                System.out.println("Invalid Input!");
+                break;
         }
-
-        return attendanceRecords;
-    }   
-    
-    // CALCULATES HOURS PER ATTENDANCE RECORD
-    private static long calculateHoursWorked(LocalTime timeIn, LocalTime timeOut) {
-        Duration duration = Duration.between(timeIn, timeOut);
-        return duration.toHours();
+        
+        System.out.println("back to menu? 1 = yes, 0 = no");
+        Resume = scanner.nextInt();
+        }while (Resume != 0);
     }
-
-    // TO CALCULATES HOURS WORKED ON A SPECIFIC MONTH OF AN EMPLOYEE
-    public static long calculateTotalHoursAndPrint(int year, int month, String targetEmployeeId) {
-    long totalHours = 0;
-    String employeeName = "";
-
-    for (AttendanceRecord entry : attendanceRecords) {
-        if (entry.getId().equals(targetEmployeeId)) {
-            // Extract year and month from the entry's date
-            int entryYear = entry.getDate().getYear();
-            int entryMonth = entry.getDate().getMonthValue();
-
-            if (entryYear == year && entryMonth == month) {
-                // Calculate hours worked for the specified month
-                long hoursWorked = calculateHoursWorked(entry.getTimeIn(), entry.getTimeOut());               
-
-                // Accumulate total hours
-                totalHours += hoursWorked;
-                employeeName = entry.getName();
-            }
+    
+    // OVERLOAD MENU FOR SUBMENU IN PRINTING EMPLOYEE DETAILS
+    private static void menu(String detailSub){
+        // Option between all employee detail or one individual.
+        switch (detailSub){
+            case "1" -> printEmpSelectList();
+            case "2" -> allEmployeeList();
         }
     }
-
-    // Output result
-    if (totalHours > 0) {
-        //System.out.printf("Employee ID: %s, Name: %s, Total Hours: %d%n",
-                //targetEmployeeId, employeeName, totalHours);
-    } else {
-        totalHours = 160;
-        //System.out.printf("Employee ID: %s, Name: %s, Total Hours: %d (Default)%n",
-                //targetEmployeeId, employeeName, totalHours);
-    }
-
-    return totalHours;
-}
-    // RETURN THE NAME
-    public String getName() {
-        return name;
-    }
-
-    // RETURN THE ID
-    public String getId() {
-        return id;
-    }
-    // RETURN THE DATE
-    public LocalDate getDate() {
-        return date;
-    }
-    // RETURN THE TimeIN
-    public LocalTime getTimeIn() {
-        return timeIn;
-    }
-    // RETURN THE TimeOUT
-    public LocalTime getTimeOut() {
-        return timeOut;
-    }
-    // RETURN THE TXT_FILE_PATH
-    public static String getTXT_FILE_PATH() {
-        return TXT_FILE_PATH;
-    }
-    // SETTER FOR TimeIN
-    public void setTimeIn(String timeIn) {
-        this.timeIn = LocalTime.parse(timeIn, timeFormatter);
-    }
-    // RETURN THE ATTENDANCE
-    public static ArrayList<AttendanceRecord> getAttendanceRecords() {
-        return attendanceRecords;
-    }
-
-    /**
-     * @param aTXT_FILE_PATH the TXT_FILE_PATH to set
-     */
-    public static void setTXT_FILE_PATH(String aTXT_FILE_PATH) {
-        TXT_FILE_PATH = aTXT_FILE_PATH;
-    }
-}
     
+    private static void printEmpSelectList() {
+        List<Employee> employees = EmployeeModelFromFile.getEmployeeModelList();
+        
+        System.out.println("""
+                   -------------------------
+                   |     Employee List     |
+                   -------------------------""");
 
+        String format = "%-15s%-20s"; // Adjust the width as needed
+
+        for (Employee employee : employees) {
+            System.out.printf(format, employee.getEmployeeNumber(), employee.getLastName());
+            System.out.println(); // Print a new line            
+        }
+        
+        System.out.println("-------------------------");
+        System.out.print("Enter Employee #: ");              
+        String empNum = scanner.next();
+        System.out.println("-------------------------");
+        
+        for (Employee employee : employees) {
+            if (employee.getEmployeeNumber().equals(empNum)) {
+                System.out.println("Employee Details for Employee ID " + empNum + ":" + '\n' +
+                                   "-------------------------");
+                System.out.println(employee.toString(true));
+                System.out.println("-------------------------");
+                return;
+            }
+        }
+
+        System.out.println("Employee ID " + empNum + " not found.");
+    }
+    
+    private static void allEmployeeList() {
+    List<Employee> employees = EmployeeModelFromFile.getEmployeeModelList();
+                    
+        for (Employee employee : employees) {
+        System.out.println(employee);
+        }
+                
+        System.out.println("-------------------------");
+    }
+} 
