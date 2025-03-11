@@ -30,7 +30,7 @@ public class MotorPHMain {
         int Resume = 1;  
     do{ 
         System.out.print("""
-        ----- Motor PH MENU -----
+       ----- DASHBOARD-----
 
         1: Show Employee Details
         2: Calculate Gross Wage
