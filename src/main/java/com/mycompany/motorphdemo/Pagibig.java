@@ -2,18 +2,24 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package com.mycompany.motorphdemo;
+package com.mycompany.motorph;
 
 /**
  *
  * @author angeliquerivera
  */
 public class Pagibig extends Calculation {
-    private static double pagibigDeduction;
+    private double pagibigDeduction;
+    private final Grosswage grosswage;
+    
+    // Constructor that accepts an instance of Grosswage
+    public Pagibig(Grosswage grosswage) {
+        this.grosswage = grosswage; // Initialize the instance
+    }
     
     @Override
     public double calculate(){
-        double gross = Grosswage.gross;
+         double gross = grosswage.calculate(); // Get the gross wage from the Grosswage instance
         double pagibig;
 
         // Conditional statement to calculate the Pagibig deduction based on gross wage range
@@ -27,8 +33,9 @@ public class Pagibig extends Calculation {
         if (pagibig > 100) {
             pagibig = 100;
         }
-        // To store the Pagibig deduction value and return it
-        return pagibigDeduction = pagibig;
+         // Store the Pag-Ibig deduction value and return it
+        pagibigDeduction = pagibig; // Update the instance variable
+        return pagibigDeduction; // Return the Pag-Ibig deduction
     }
     
 }
