@@ -1,34 +1,39 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package com.mycompany.motorphdemo;
-import java.io.BufferedReader;
-import java.io.FileReader;
+package com.mycompany.motorph;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.text.DecimalFormat; // Make sure to import DecimalFormat
 
 /**
  *
  * @author angeliquerivera
  */
+
 public class AttendanceRecord {
-     private String name;
+
+    private String name;
     private String id;
     private LocalDate date;
     private LocalTime timeIn;
     private LocalTime timeOut;
-    private static String TXT_FILE_PATH = "src/main/resources/AttendanceRecord5.txt";
+    private static final String XLSX_FILE_PATH = "src/main/resources/AttendanceRecord.xlsx";
+   private static final DecimalFormat decimalFormat = new DecimalFormat("#.##"); // Declare DecimalFormat
 
-    public static ArrayList<AttendanceRecord> attendanceRecords;
-    // FORMATTER FOR TIME
+    public static ArrayList<AttendanceRecord> attendanceRecords = new ArrayList<>();
     private static final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:mm");
-
+    private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+    private static final DecimalFormat grossWageDecimalFormat = new DecimalFormat("#.##"); // Declare DecimalFormat
+    
     // Constructor
     public AttendanceRecord(String name, String id, LocalDate date, LocalTime timeIn, LocalTime timeOut) {
         this.name = name;
@@ -37,134 +42,174 @@ public class AttendanceRecord {
         this.timeIn = timeIn;
         this.timeOut = timeOut;
     }
-    
-    public AttendanceRecord(){}
 
-    static {
-        attendanceRecords = loadAttendance();
+    // New constructor that accepts a String array
+    public AttendanceRecord(String[] data) {
+        if (data.length < 6) {
+            throw new IllegalArgumentException("Insufficient data to create AttendanceRecord");
+        }
+        this.id = data[0];
+        this.name = data[1] + " " + data[2].trim(); // Assuming name is split into two parts
+        this.date = LocalDate.parse(data[3], dateFormatter);
+        this.timeIn = LocalTime.parse(data[4], timeFormatter);
+        this.timeOut = LocalTime.parse(data[5], timeFormatter);
     }
-    
-    // LOADS ATTENDANCE FROM A TXT USING TRY-CATCH TO ENSURE PROPER LOADING AND CLOSING
-    public static ArrayList<AttendanceRecord> loadAttendance() {
+
+    public AttendanceRecord() {}
+
+    // LOADS ATTENDANCE FROM AN XLSX FILE
+    public static void loadAttendanceFromExcel(String filePath) {
+        attendanceRecords = loadAttendance(filePath);
+        System.out.println("Loaded " + attendanceRecords.size() + " attendance records.");
+        
+    }
+
+    public static ArrayList<AttendanceRecord> loadAttendance(String filePath) {
         ArrayList<AttendanceRecord> attendanceRecords = new ArrayList<>();
-        
-        
-        try (BufferedReader br = new BufferedReader(new FileReader(TXT_FILE_PATH))) {
-            // FORMATS RECEIVED DATA TO FIT WHAT IS NEEDED
-            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy"); // FORMAT FOR DATE
-            DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("H:mm");      // FORMAT FOR TIME
+         //DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+         //DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:mm"); // 24 hour format
 
-            // Read and skip the header
-            br.readLine();
 
-            // Process attendance records
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(",");
+        try (FileInputStream fis = new FileInputStream(filePath);
+             Workbook workbook = new XSSFWorkbook(fis)) {
 
-                if (data.length >= 6) {
-                    String name = data[1] + " " + data[2].trim();
-                    String id = data[0];
-                    LocalDate date = LocalDate.parse(data[3], dateFormat);
-                    LocalTime timeIn = LocalTime.parse(data[4], timeFormat);
-                    LocalTime timeOut = LocalTime.parse(data[5], timeFormat);
-
-                    attendanceRecords.add(new AttendanceRecord(name, id, date, timeIn, timeOut));
+            Sheet sheet = workbook.getSheetAt(0); // Assuming data is in the first sheet
+             
+            // Skip the header row
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                if (row != null) {
+                    String id = getCellValueAsString(row.getCell(0));
+                    String name = getCellValueAsString(row.getCell(1));
+                    String surname = getCellValueAsString(row.getCell(2)).trim();
+                    
+                  
+                     LocalDate date;
+                if (row.getCell(3).getCellType() == CellType.NUMERIC) {
+                    date = row.getCell(3).getLocalDateTimeCellValue().toLocalDate();
                 } else {
-                    System.out.println("Invalid data: " + line);
+                    String dateString = getCellValueAsString(row.getCell(3));
+                    date = LocalDate.parse(dateString, dateFormatter);
+                }
+                
+                
+                 LocalTime timeIn;
+                    if (row.getCell(4).getCellType() == CellType.NUMERIC) {
+                        timeIn = row.getCell(4).getLocalDateTimeCellValue().toLocalTime();
+                    } else {
+                        String timeInString = getCellValueAsString(row.getCell(4));
+                        timeIn = LocalTime.parse(timeInString, timeFormatter);
+                    }
+
+                 LocalTime timeOut;
+                    if (row.getCell(5).getCellType() == CellType.NUMERIC) {
+                        timeOut = row.getCell(5).getLocalDateTimeCellValue().toLocalTime();
+                    } else {
+                        String timeOutString = getCellValueAsString(row.getCell(5));
+                        timeOut = LocalTime.parse(timeOutString, timeFormatter);
+                    }
+                   
+                    // Create a new AttendanceRecord using the existing constructor
+                    attendanceRecords.add(new AttendanceRecord(name + " " + surname, id, date, timeIn, timeOut));
                 }
             }
-
+                  
         } catch (IOException e) {
-            e.printStackTrace();
+             System.err.println("Error loading attendance records: " + e.getMessage());
         }
 
         return attendanceRecords;
-    }   
-    
-    // CALCULATES HOURS PER ATTENDANCE RECORD
-    private static long calculateHoursWorked(LocalTime timeIn, LocalTime timeOut) {
-        Duration duration = Duration.between(timeIn, timeOut);
-        return duration.toHours();
     }
 
-    // TO CALCULATES HOURS WORKED ON A SPECIFIC MONTH OF AN EMPLOYEE
-    public static long calculateTotalHoursAndPrint(int year, int month, String targetEmployeeId) {
-    long totalHours = 0;
-    String employeeName = "";
-    System.out.println("Checking attendance for Employee ID: " + targetEmployeeId + " for Year: " + year + " Month: " + month);
+    // Helper method to get cell value as String
+    private static String getCellValueAsString(Cell cell) {
+        if (cell == null) {
+            return "";
+        }
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> String.valueOf(cell.getNumericCellValue());
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            case FORMULA -> cell.getCellFormula();
+            default -> "";
+        };
+    }
 
-    for (AttendanceRecord entry : attendanceRecords) {
-        if (entry.getId().equals(targetEmployeeId)) {
-            // Extract year and month from the entry's date
+    // CALCULATES HOURS PER ATTENDANCE RECORD
+    double calculateHoursWorked() {
+         Duration duration;
+    if (timeOut.isBefore(timeIn)) {
+        // If timeOut is before timeIn, assume the employee worked past midnight
+        duration = Duration.between(timeIn, timeOut.plusHours(24));
+    } else {
+        duration = Duration.between(timeIn, timeOut);
+    }
+    return duration.toHours() + (duration.toMinutes() % 60) / 60.0; // Return total hours as a double
+}
+    
+
+    // TO CALCULATES HOURS WORKED ON A SPECIFIC MONTH OF AN EMPLOYEE
+    public static double calculateTotalHoursAndPrint(int year, int month, String targetEmployeeId) {
+        double totalHours = 0;
+        boolean foundRecord = false;
+        //String employeeName = "";
+        System.out.println("Checking attendance for Employee ID: " + targetEmployeeId + " for Year: " + year + " Month: " + month);
+
+        for (AttendanceRecord entry : attendanceRecords) {
+            System.out.printf("Entry ID: %s, Date: %s, Time In: %s, Time Out: %s%n", 
+        entry.getId(), 
+        entry.getDate(), 
+        entry.getTimeIn(), 
+        entry.getTimeOut());
+        
+       // Normalize entry ID for comparison
+        if (entry.getId().equals(targetEmployeeId) || entry.getId().equals(targetEmployeeId + ".0")) {
             int entryYear = entry.getDate().getYear();
             int entryMonth = entry.getDate().getMonthValue();
 
+             System.out.printf("Checking Entry - ID: %s, Year: %d, Month: %d%n", entry.getId(), entryYear, entryMonth);
+             
             if (entryYear == year && entryMonth == month) {
-                // Calculate hours worked for the specified month
-                long hoursWorked = calculateHoursWorked(entry.getTimeIn(), entry.getTimeOut());               
-
-                // Accumulate total hours
-                totalHours += hoursWorked;
-                employeeName = entry.getName();
+                foundRecord = true;
+                double hoursWorked = entry.calculateHoursWorked();
+                totalHours += hoursWorked; // Add to total hours
             }
+           }
+          } 
+
+        //if (totalHours > 0) {
+          if (foundRecord) {
+         System.out.printf("Total Hours for Employee ID: %s: %.2f%n", targetEmployeeId, totalHours);
+            //System.out.printf("Employee ID: %s, Name: %s, Total Hours: %d%n", targetEmployeeId, employeeName, totalHours);
+        } else {
+            System.out.println("No hours found for Employee ID: " + targetEmployeeId);
         }
-    }
 
-    // Output result
-    if (totalHours > 0) {
-        //System.out.printf("Employee ID: %s, Name: %s, Total Hours: %d%n",
-                //targetEmployeeId, employeeName, totalHours);
-    } else {
-        //totalHours = 160;
-        //System.out.printf("Employee ID: %s, Name: %s, Total Hours: %d (Default)%n",
-                //targetEmployeeId, employeeName, totalHours);
-                System.out.println("No hours found for Employee ID: " + targetEmployeeId);
+        return totalHours;
     }
-
-    return totalHours;
-}
-    // RETURN THE NAME
+    
+    // Getters
     public String getName() {
         return name;
     }
 
-    // RETURN THE ID
     public String getId() {
         return id;
     }
-    // RETURN THE DATE
+
     public LocalDate getDate() {
         return date;
     }
-    // RETURN THE TimeIN
+
     public LocalTime getTimeIn() {
         return timeIn;
     }
-    // RETURN THE TimeOUT
+
     public LocalTime getTimeOut() {
         return timeOut;
     }
-    // RETURN THE TXT_FILE_PATH
-    public static String getTXT_FILE_PATH() {
-        return TXT_FILE_PATH;
-    }
-    // SETTER FOR TimeIN
-    public void setTimeIn(String timeIn) {
-        this.timeIn = LocalTime.parse(timeIn, timeFormatter);
-    }
-    // RETURN THE ATTENDANCE
+
     public static ArrayList<AttendanceRecord> getAttendanceRecords() {
         return attendanceRecords;
     }
-
-    /**
-     * @param aTXT_FILE_PATH the TXT_FILE_PATH to set
-     */
-    public static void setTXT_FILE_PATH(String aTXT_FILE_PATH) {
-        TXT_FILE_PATH = aTXT_FILE_PATH;
-    }
 }
-    
-
-
