@@ -1,148 +1,147 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package com.mycompany.motorphdemo;
+package com.mycompany.motorph;
+
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-/**
- *
- * @author angeliquerivera
- */
-public class Grosswage extends Calculation{
-     public static String targetEmployeeID;
-    public static String employeeName;
-    private static String employeeID;
-    public static int targetMonth;
-    public static double gross;
-    private static double hourly;
-    public static double hours;
-    
-    // Declare decimalFormat
-    private static final DecimalFormat decimalFormat = new DecimalFormat("#.##");
-    
-    public double calculate(){
-        List<Employee> employees = EmployeeModelFromFile.getEmployeeModelList();  // Get the list of employees
-            Scanner sc = new Scanner(System.in);
-            
-            // Asks for User Input.
-                System.out.println("-------------------------");
-                System.out.print("Enter Employee #: ");              
-                targetEmployeeID = sc.next();
-                System.out.println("-------------------------");
-                System.out.println("Enter Month: ");
-                targetMonth = sc.nextInt();
-                System.out.println("-------------------------");
-                
-                // Debugging print statements
-    System.out.println("Target Employee ID: " + getTargetEmployeeID());
-    System.out.println("Target Month: " + getTargetMonth());
+public class Grosswage extends Calculation {
+    private final String employeeID; // Instance field for employee ID
+    private String employeeName; // Instance field for employee name
+    private int targetMonth; // Instance field for the target month
+    double gross; // Instance field for gross wage
+    private double hourly; // Instance field for hourly rate
+    private double hours; // Instance field for total hours worked
 
-            // Read all rows from the txt file
-            // Find the hourly rate for the chosen employee ID
-            for (Employee employee : employees) {
-                if (employee.getEmployeeNumber().equals(getTargetEmployeeID())) {
-                    // Assuming the employee ID is in the first column, and hourly rate is in the last column
-                    // setHourlyRate(employee.getHourlyRate());
-                    setHourly(employee.getHourlyRate());
-                    // employeeName = employee.getFirstName() +" " + employee.getLastName();
-                    // Remove commas from the hourly rate string
-                    setHourly(getHourly());
-                    employeeID = employee.getEmployeeNumber();
-                    // Check if the hourly rate string is a valid decimal number
-                    if (isValidDecimal(Double.toString(getHourly()))) {
-                        double HourlyRate = employee.getHourlyRate();
-                        long totalHours = 0;
-                         List<Integer> years = List.of(2022, 2023, 2024); 
-                         // Loop through the years to calculate total hours
-                for (int year : years) {
-                    totalHours += AttendanceRecord.calculateTotalHoursAndPrint(year, getTargetMonth(), getTargetEmployeeID());
-                }
-                        // Debugging print statement for calculated hours
-                System.out.println("Total Calculated Hours: " + totalHours);
-                        double hoursCalculated = HourlyRate * totalHours;
-                        
-                        setHourly(HourlyRate);
-                        hours = totalHours;
-                        gross = hoursCalculated;
-                        employeeName = employee.getFirstName() + " "+ employee.getLastName();
-                        // Call printGross to display the results
-                printGross();
-                        //printGross(employee.getEmployeeNumber(), employeeName, HourlyRate, hour, gross);
-                    } else {
-                        System.out.println("Invalid hourly rate for Employee ID " + getEmployeeID() + ": " + getHourly());
-                        System.out.println(); // Move to the next line for the next row
-                    }                                              
-                        
-                    return gross; // Exit the loop once the employee is found
-                }                               
-            }
-            
-            // If the loop completes without finding the employee ID
-            System.out.println("Employee ID " + getEmployeeID() + " not found.");
-        return gross;
+    // Declare decimalFormat for formatting output
+    private static final DecimalFormat grossWageDecimalFormat = new DecimalFormat("#.##");
+     private static final Scanner scanner = new Scanner(System.in); // Single Scanner instance
+     
+     // Constructor for employee ID
+    public Grosswage(String employeeID) {
+        this.employeeID = employeeID; // Initialize employeeID
     }
     
-    public static void printGross(){
+     // Constructor for employee details
+    public Grosswage(String empId, String firstName, String lastName, double hourlyRate) {
+        this.employeeID = empId;
+        this.employeeName = firstName + " " + lastName;
+        this.hourly = hourlyRate; // Initialize hourly rate
+    }
+    
+
+    @Override
+    public double calculate() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("-------------------------");
+        System.out.print("Enter Month: ");
+        targetMonth = sc.nextInt(); // Set targetMonth from user input
+        System.out.println("-------------------------");
+
+        // Validate month input
+        if (targetMonth < 1 || targetMonth > 12) {
+            System.out.println("Invalid month. Please enter a value between 1 and 12.");
+            return 0; // or handle as needed
+        }
+
+        List<Employee> employees = EmployeeModelFromFile.getEmployeeModelList(); // Get the list of employees
+
+        // Find the employee by ID
+        Employee employee = findEmployeeById(employeeID, employees);
+        if (employee == null) {
+            System.out.println("Employee ID " + employeeID + " not found.");
+            return 0; // Exit if employee is not found
+        }
+
+        // Retrieve the hourly rate
+        hourly = employee.getHourlyRate(); // Set hourly rate
+        if (hourly <= 0) {
+            System.out.println("Invalid hourly rate for Employee ID " + employeeID + ": " + hourly);
+            return 0; // Exit if hourly rate is invalid
+        }
+
+        System.out.println("Hourly Rate: " + hourly);
+
+        // Calculate total hours worked
+        hours = calculateTotalHours(targetMonth, employeeID); // Set total hours worked
+
+        // Calculate gross wage
+        gross = calculateGrossWage(hours); // Set gross wage
+
+        // Call printGross to display the results
+        printGross();
+
+        return gross; // Return the gross wage
+    }
+
+    private Employee findEmployeeById(String employeeId, List<Employee> employees) {
+        for (var employee : employees) {
+            if (employee.getEmployeeNumber().equals(employeeId)) {
+                return employee; // Return the found employee
+            }
+        }
+        return null; // Return null if not found
+    }
+
+    private double calculateTotalHours(int targetMonth, String employeeID) {
+        double totalHours = 0;
+        List<Integer> years = new ArrayList<>();
+        // Allow user to input years
+        System.out.print("Enter Year(s) (comma-separated): ");
+        Scanner sc = new Scanner(System.in);
+        String yearInput = sc.next();
+        String[] yearStrings = yearInput.split(",");
+        for (String yearStr : yearStrings) {
+            years.add(Integer.parseInt(yearStr.trim())); // Add each year to the list
+        }
+
+        // Loop through the years to calculate total hours
+        for (int year : years) {
+            totalHours += AttendanceRecord.calculateTotalHoursAndPrint(year, targetMonth, employeeID);
+        }
+        return totalHours; // Return the total hours calculated
+    }
+
+    public double calculateGrossWage(double totalHours) {
+        return totalHours * hourly; // Calculate gross wage
+    }
+
+    public void printGross() {
         System.out.println("""
                 ------------------------------------------           
                 Employee ID: %s
                 Name: %s
                 Hourly Rate: %.2f
-                Total Hours: %s
+                Total Hours: %.2f
                 Gross Wage: %s
                 ------------------------------------------
-                """.formatted(getEmployeeID(), 
-                    employeeName, getHourly(),
-                    hours, 
-                    decimalFormat.format(gross)
+                """.formatted(
+                        employeeID,
+                        employeeName,
+                        hourly,
+                        hours,
+                        decimalFormat.format(gross)
                 ));
     }
-    
-    //CHECKS IF DECIMAL IN HOURLY RATE IS VALID
-    private static boolean isValidDecimal(String str) {
-        try {
-        Double.parseDouble(str);
-        return true;
-    } catch (NumberFormatException e) {
-        return false;
-    }
-}
 
-    /**
-     * @return the targetEmployeeID
-     */
-    public static String getTargetEmployeeID() {
-        return targetEmployeeID;
+    // Getters
+    public String getEmployeeID() {
+        return employeeID; // Return the employee ID
     }
 
-    /**
-     * @return the targetMonth
-     */
-    public static int getTargetMonth() {
-        return targetMonth;
+    public double getHourly() {
+        return hourly; // Return the hourly rate
     }
 
-    /**
-     * @return the employeeID
-     */
-    public static String getEmployeeID() {
-        return employeeID;
+    public int getTargetMonth() {
+        return targetMonth; // Return the target month
     }
 
-    /**
-     * @return the hourly
-     */
-    public static double getHourly() {
-        return hourly;
+    public double getGross() {
+        return gross; // Return the gross wage
     }
 
-    /**
-     * @param aHourly the hourly to set
-     */
-    public static void setHourly(double aHourly) {
-        hourly = aHourly;
+    public double getHours() {
+        return hours; // Return the total hours worked
     }
 }
