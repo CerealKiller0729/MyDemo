@@ -25,12 +25,18 @@ public class MotorPHMain {
         // Load attendance records from the Excel file
         AttendanceRecord.loadAttendanceFromExcel("src/main/resources/AttendanceRecord.xlsx");
         System.out.println("Attendance records loaded.");
+            
+        // Display the main menu     
         menu();
       }  else {
         System.out.println("Login failed. Exiting application.");
         } 
     }    
-         // Method to handle user login
+
+    /**
+     * Handles user login with a predefined username and password.
+     * @return true if login is successful, false otherwise
+     */
     private static boolean login() {
         String correctUsername = "admin";
         String correctPassword = "admin";
@@ -39,12 +45,15 @@ public class MotorPHMain {
         String username = scanner.nextLine().trim(); // Read username
         System.out.print("Password: ");
         String password = scanner.nextLine().trim(); // Read password
+        
         // Normalize input to lowercase for case-insensitive comparison
         return username.equalsIgnoreCase(correctUsername) && password.equalsIgnoreCase(correctPassword); // Login successful
         
     }
 
-          // Print main menu
+           /**
+            * Displays the main menu and handles user choices.
+            */
            private static void menu() {
            int resume = 1;
            do {
@@ -167,7 +176,11 @@ public class MotorPHMain {
         return month;
     }
 
-    // Method to find employee by ID
+    /**
+     * Finds an employee by their ID
+     * @param empID Employee ID
+     * @return Employee object if found, otherwise null
+    */
     private static Employee findEmployeeById(String empId) {
         List<Employee> employees = EmployeeModelFromFile.getEmployeeModelList();
         for (Employee employee : employees) {
